@@ -1,6 +1,3 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
@@ -9,19 +6,14 @@ import (
 )
 
 var intervalTime, longBreak, shortBreak int
+var name string
 
-// startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-		and usage of using your command. For example:
-
-		Cobra is a CLI library for Go that empowers applications.
-		This application is a tool to generate the needed files
-		to quickly create a Cobra application.`,
+	Short: "Starts the pomodoro timer",
+	Long:  `The pomodoro timer will start with the first focus session for a default of 25 minutes and alternate with short 5 minute breaks. Every 4 breaks there will be a long 15 minute break`,
 	Run: func(cmd *cobra.Command, args []string) {
-		currentSession := session.CreateSession("test", intervalTime, longBreak, shortBreak)
+		currentSession := session.CreateSession(name, intervalTime, longBreak, shortBreak)
 		currentSession.Start()
 	},
 }
@@ -32,5 +24,6 @@ func init() {
 	startCmd.Flags().IntVar(&intervalTime, "intervalTime", 25, "interval duration in minutes")
 	startCmd.Flags().IntVar(&longBreak, "longBreak", 15, "long break duration in minutes")
 	startCmd.Flags().IntVar(&shortBreak, "shortBreak", 5, "short break duration in minutes")
+	startCmd.Flags().StringVar(&name, "name", "focus", "focus interval name")
 
 }

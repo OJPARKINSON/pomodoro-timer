@@ -8,7 +8,7 @@ import (
 type Session struct {
 	createdAt    time.Time
 	name         string
-	mode         string
+	interval     string
 	intervalTime time.Duration
 	shortBreak   time.Duration
 	longBreak    time.Duration
@@ -19,16 +19,17 @@ type Session struct {
 	isRunning    bool
 	isBreak      bool
 	isPaused     bool
+	intervalNum  int
 }
 
 func CreateSession(name string, intervalTime int, shortBreak int, longBreak int) *Session {
 	return &Session{
 		createdAt:    time.Now(),
 		name:         name,
-		mode:         "basic",
-		intervalTime: time.Duration(60-intervalTime) * time.Minute,
-		longBreak:    time.Duration(60-longBreak) * time.Minute,
-		shortBreak:   time.Duration(60-shortBreak) * time.Minute,
+		interval:     name,
+		intervalTime: time.Duration(intervalTime) * time.Minute,
+		longBreak:    time.Duration(longBreak) * time.Minute,
+		shortBreak:   time.Duration(shortBreak) * time.Minute,
 	}
 }
 
@@ -38,6 +39,8 @@ func (s *Session) Start() error {
 	skip := make(chan bool)
 
 	s.isRunning = true
+	s.currentEnd = time.Now().Add(s.intervalTime)
+	s.intervalNum = 1
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
@@ -61,6 +64,7 @@ func (s *Session) Start() error {
 						s.isRunning = false
 						return nil
 					}
+					s.setNextInterval()
 				}
 			}
 		}
@@ -77,9 +81,28 @@ func (s *Session) skipInterval() {
 
 }
 func (s *Session) updateDisplay() {
-	fmt.Println(time.Since(s.currentEnd).Seconds())
+	fmt.Printf("%s left of session: %s\n", time.Until(s.currentEnd).Truncate(time.Second), s.name)
 
 }
 func (s *Session) nextInterval() bool {
 	return true
+}
+
+func (s *Session) setNextInterval() {
+	if s.isBreak {
+		s.isBreak = false
+		s.currentEnd = time.Now().Add(s.intervalTime)
+		s.interval = s.name
+		s.intervalNum += 1
+	} else {
+		if s.intervalNum%4 == 0 {
+			s.interval = "long break"
+			s.currentEnd = time.Now().Add(s.longBreak)
+			s.isBreak = true
+		} else {
+			s.interval = "short break"
+			s.currentEnd = time.Now().Add(s.shortBreak)
+			s.isBreak = true
+		}
+	}
 }
