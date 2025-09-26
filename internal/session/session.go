@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -15,7 +16,7 @@ type Session struct {
 	cycleCount   int
 	maxCycles    int
 	startTime    time.Time
-	currentEnd   time.Time
+	endTime      time.Time
 	isRunning    bool
 	isBreak      bool
 	isPaused     bool
@@ -33,13 +34,12 @@ func CreateSession(name string, intervalTime int, shortBreak int, longBreak int)
 	}
 }
 
-func (s *Session) Start() error {
+func (s *Session) Start(ctx context.Context) error {
 	quit := make(chan bool)
 	pause := make(chan bool)
-	skip := make(chan bool)
 
 	s.isRunning = true
-	s.currentEnd = time.Now().Add(s.intervalTime)
+	s.endTime = time.Now().Add(s.intervalTime)
 	s.intervalNum = 1
 
 	ticker := time.NewTicker(time.Second)
@@ -54,12 +54,10 @@ func (s *Session) Start() error {
 			return nil
 		case <-pause:
 			s.togglePause()
-		case <-skip:
-			s.skipInterval()
 		case <-ticker.C:
 			if !s.isPaused {
 				s.updateDisplay()
-				if time.Now().After(s.currentEnd) {
+				if time.Now().After(s.endTime) {
 					if !s.nextInterval() {
 						s.isRunning = false
 						return nil
@@ -74,34 +72,35 @@ func (s *Session) Start() error {
 }
 
 func (s *Session) togglePause() {
-
+	s.isPaused = !s.isPaused
 }
 
-func (s *Session) skipInterval() {
-
-}
 func (s *Session) updateDisplay() {
-	fmt.Printf("%s left of session: %s\n", time.Until(s.currentEnd).Truncate(time.Second), s.name)
+	fmt.Printf("%s left of session: %s\n", time.Until(s.endTime).Truncate(time.Second), s.interval)
 
 }
 func (s *Session) nextInterval() bool {
-	return true
+	if s.intervalNum > 4 {
+		return false
+	} else {
+		return true
+	}
 }
 
 func (s *Session) setNextInterval() {
 	if s.isBreak {
 		s.isBreak = false
-		s.currentEnd = time.Now().Add(s.intervalTime)
+		s.endTime = time.Now().Add(s.intervalTime)
 		s.interval = s.name
 		s.intervalNum += 1
 	} else {
 		if s.intervalNum%4 == 0 {
 			s.interval = "long break"
-			s.currentEnd = time.Now().Add(s.longBreak)
+			s.endTime = time.Now().Add(s.longBreak)
 			s.isBreak = true
 		} else {
 			s.interval = "short break"
-			s.currentEnd = time.Now().Add(s.shortBreak)
+			s.endTime = time.Now().Add(s.shortBreak)
 			s.isBreak = true
 		}
 	}

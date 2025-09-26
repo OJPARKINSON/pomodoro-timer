@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/ojparkinson/pomodoro-timer/internal/session"
 	"github.com/spf13/cobra"
 )
@@ -13,8 +18,14 @@ var startCmd = &cobra.Command{
 	Short: "Starts the pomodoro timer",
 	Long:  `The pomodoro timer will start with the first focus session for a default of 25 minutes and alternate with short 5 minute breaks. Every 4 breaks there will be a long 15 minute break`,
 	Run: func(cmd *cobra.Command, args []string) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
 		currentSession := session.CreateSession(name, intervalTime, longBreak, shortBreak)
-		currentSession.Start()
+		currentSession.Start(ctx)
 	},
 }
 
