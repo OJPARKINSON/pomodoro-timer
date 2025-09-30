@@ -1,5 +1,6 @@
-﻿using dotnet.session;
-using dotnet.PomodoroTimer;
+using PomodoroTimer.Models;
+using PomodoroTimer.Session;
+using PomodoroTimer.UI;
 
 Console.Clear();
 Console.CursorVisible = false;
@@ -8,18 +9,18 @@ try
 {
     Console.WriteLine("🍅 Pomodoro Timer");
     Console.WriteLine("Press ENTER to start, Q to quit");
-    
+
     var key = Console.ReadKey(true);
     if (key.Key == ConsoleKey.Q) return;
-    
+
     var config = SessionConfiguration.Default;
     var ui = new ConsoleUserInterface();
-    var timer = new PomodoroTimer(TimeSpan.FromMinutes(config.FocusTime));
+    var timer = new PomodoroTimer.Core.Timer(TimeSpan.FromMinutes(config.FocusTime));
     var session = new PomodoroSession(timer, ui, config);
 
     Console.Clear();
     session.Start();
-    
+
     // Keep the application running
     Console.WriteLine("\nPress Q to quit, P to pause/resume...");
     while (true)

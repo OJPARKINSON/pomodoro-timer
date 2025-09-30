@@ -1,19 +1,21 @@
 using System.Timers;
+using PomodoroTimer.Core;
 
-namespace dotnet.PomodoroTimer;
+namespace PomodoroTimer.Core;
 
-public class PomodoroTimer : IPomodoroTimer
+public class Timer : IPomodoroTimer
 {
     private readonly System.Timers.Timer _internalTimer;
-    private readonly TimeSpan _duration;
+    private TimeSpan _duration;
     private TimeSpan _remaining;
     private bool _isRunning;
     private bool _disposed;
 
     public event EventHandler<ElapsedEventArgs>? TimerElapsed;
     public bool IsRunning => _isRunning;
+    public TimeSpan RemainingTime => _remaining;
 
-    public PomodoroTimer(TimeSpan duration)
+    public Timer(TimeSpan duration)
     {
         if (duration <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(duration), "Duration must be positive");
@@ -46,6 +48,7 @@ public class PomodoroTimer : IPomodoroTimer
             _internalTimer.Start();
         }
     }
+    
     public async Task StartAsync()
     {
         Start();
@@ -55,15 +58,27 @@ public class PomodoroTimer : IPomodoroTimer
             await Task.Delay(100);
         }
     }
+    
     public void Stop()
     {
         _isRunning = false;
         _internalTimer.Stop();
     }
+    
     public void Reset()
     {
         Stop();
         _remaining = _duration;
+    }
+    
+    public void Reset(TimeSpan newDuration)
+    {
+        if (newDuration <= TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(nameof(newDuration), "Duration must be positive");
+            
+        Stop();
+        _duration = newDuration;
+        _remaining = newDuration;
     }
 
     public void Dispose()
@@ -81,14 +96,4 @@ public class PomodoroTimer : IPomodoroTimer
             _disposed = true;
         }
     }
-}
-
-public interface IPomodoroTimer : IDisposable
-{
-    event EventHandler<ElapsedEventArgs>? TimerElapsed;
-    void Start();
-    Task StartAsync();
-    void Stop();
-    void Reset();
-    bool IsRunning { get; }
 }
